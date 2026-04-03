@@ -1,0 +1,1 @@
+# jmcomic_plugin_for_maibot
