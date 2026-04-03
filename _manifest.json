@@ -1,9 +1,9 @@
 
 {
   "manifest_version": 1,
-  "name": "JMComic 漫画插件（JMComic-Plugin-for-MaiBot）",
+  "name": "geffnt_jmcomic-plugin",
   "version": "1.0.0",
-  "description": "基于 JMComic-Crawler-Python 的禁漫天堂漫画下载插件，支持漫画搜索、章节下载、合并转发等功能",
+  "description": "基于 JMComic-Crawler-Python 的禁漫天堂漫画下载插件，支持漫画搜索、章节下载、PDF导出、图片压缩等功能",
   "author": {
     "name": "geffnt",
     "url": "https://github.com/geffnt"
@@ -36,9 +36,10 @@
         "pattern": "^(/jm|jm漫画|禁漫)\\s*(?P<args>.*)?$",
         "usage": "/jm <子命令> [参数]",
         "examples": [
-          "/jm search 魔法少女",
-          "/jm info 123456",
-          "/jm download 123456 1"
+          "/jm 123456",
+          "/jm 123456 2",
+          "/jm 123456 pdf",
+          "/jm 123456 2 jpg"
         ]
       }
     ],
@@ -47,6 +48,9 @@
       "获取漫画详情和章节列表",
       "下载指定章节",
       "合并转发格式发送图片",
+      "PDF 导出功能（支持命令行参数控制）",
+      "PDF 图片压缩（降低文件大小）",
+      "PDF 分卷功能（可配置每PDF图片数）",
       "支持代理设置",
       "支持账号登录",
       "用户冷却时间控制",
@@ -55,7 +59,9 @@
     ],
     "dependencies": {
       "python": [
-        "jmcomic"
+        "jmcomic",
+        "reportlab",
+        "Pillow"
       ],
       "plugins": [],
       "external_api": [
