@@ -249,7 +249,7 @@ def create_pdf_from_images(image_files: list, output_path: Path, album_title: st
                 
                 # 计算压缩率
                 compression_ratio = (original_size - compressed_size) / original_size * 100 if original_size > 0 else 0
-                logger.info(f"已添加第 {i+1}/{len(image_files)} 张图片到 PDF (压缩: {compression_ratio:.1f}%)")
+                logger.debug(f"已添加第 {i+1}/{len(image_files)} 张图片到 PDF (压缩: {compression_ratio:.1f}%)")
                 
             except Exception as e:
                 logger.warning(f"处理图片 {img_path} 失败: {e}")
@@ -484,6 +484,14 @@ class JMComicClient:
             
             self._jmc = jmcomic
 
+            # 禁用 jmcomic 的日志输出（设置为 WARNING 级别，只显示警告和错误）
+            import logging
+            jmcomic_logger = logging.getLogger("jmcomic")
+            jmcomic_logger.setLevel(logging.WARNING)
+            # 移除所有处理器，防止日志输出
+            for handler in jmcomic_logger.handlers[:]:
+                jmcomic_logger.removeHandler(handler)
+
             # 创建 JmApiClient 实例
             postman = JmModuleConfig.new_postman()
             domain_list = JmModuleConfig.DOMAIN_API_LIST
@@ -533,12 +541,11 @@ class JMComicClient:
     def _get_album_info_sync(self, album_id: str) -> Optional[Dict[str, Any]]:
         self._init_jmcomic()
         try:
-            logger.info(f"尝试获取专辑信息: {album_id}")
+            logger.debug(f"尝试获取专辑信息: {album_id}")
             
             # 直接使用 JmApiClient 获取专辑信息
             album_detail = self._client.get_album_detail(album_id)
-            logger.info(f"成功获取专辑对象: {type(album_detail)}")
-            logger.info(f"专辑对象属性: {dir(album_detail)}")
+            logger.debug(f"成功获取专辑对象: {type(album_detail)}")
             
             # 提取章节信息
             chapters = []
@@ -547,16 +554,16 @@ class JMComicClient:
             episodes = []
             if hasattr(album_detail, 'episode_list'):
                 episodes = album_detail.episode_list
-                logger.info(f"找到 {len(episodes)} 个章节 (通过 episode_list 属性)")
+                logger.debug(f"找到 {len(episodes)} 个章节 (通过 episode_list 属性)")
             elif hasattr(album_detail, 'episodes'):
                 episodes = album_detail.episodes
-                logger.info(f"找到 {len(episodes)} 个章节 (通过 episodes 属性)")
+                logger.debug(f"找到 {len(episodes)} 个章节 (通过 episodes 属性)")
             elif hasattr(album_detail, 'chapter_list'):
                 episodes = album_detail.chapter_list
-                logger.info(f"找到 {len(episodes)} 个章节 (通过 chapter_list 属性)")
+                logger.debug(f"找到 {len(episodes)} 个章节 (通过 chapter_list 属性)")
             elif hasattr(album_detail, 'photos'):
                 episodes = album_detail.photos
-                logger.info(f"找到 {len(episodes)} 个章节 (通过 photos 属性)")
+                logger.debug(f"找到 {len(episodes)} 个章节 (通过 photos 属性)")
             else:
                 logger.warning("未找到章节列表属性")
             
@@ -618,7 +625,7 @@ class JMComicClient:
             if description is None:
                 description = ""
             
-            logger.info(f"专辑信息 - 标题: {title}, 作者: {author}, 章节数: {len(chapters)}")
+            logger.debug(f"专辑信息 - 标题: {title}, 作者: {author}, 章节数: {len(chapters)}")
             
             # 如果没有找到章节，但可能需要尝试其他方法
             if len(chapters) == 0:
@@ -652,7 +659,7 @@ class JMComicClient:
     def _download_chapter_sync(self, album_id: str, chapter_index: int) -> Optional[Path]:
         self._init_jmcomic()
         try:
-            logger.info(f"开始下载漫画 {album_id} 第 {chapter_index} 章")
+            logger.debug(f"开始下载漫画 {album_id} 第 {chapter_index} 章")
             
             # 获取专辑信息以获取章节的 photo_id
             album_info = self._get_album_info_sync(album_id)
@@ -662,7 +669,7 @@ class JMComicClient:
                 # 获取章节的 photo_id
                 chapter_info = album_info['chapters'][chapter_index - 1]
                 photo_id = chapter_info['photo_id']
-                logger.info(f"从专辑信息获取到 photo_id: {photo_id}")
+                logger.debug(f"从专辑信息获取到 photo_id: {photo_id}")
             else:
                 logger.warning(f"无法从专辑信息获取章节，尝试直接使用 album_id 作为 photo_id")
                 # 如果无法获取章节信息，尝试直接使用 album_id（有些漫画可能只有一章）
@@ -679,30 +686,30 @@ class JMComicClient:
             # 切换工作目录到 jmcomic 文件夹，让 jmcomic 下载到这里
             original_dir = os.getcwd()
             os.chdir(str(self.base_dir))
-            logger.info(f"切换工作目录到: {self.base_dir}")
+            logger.debug(f"切换工作目录到: {self.base_dir}")
     
             try:
                 # 尝试使用简单的下载方法
                 try:
                     # 方法1: 尝试使用 download_photo
-                    logger.info(f"尝试下载 photo_id: {photo_id}")
+                    logger.debug(f"尝试下载 photo_id: {photo_id}")
                     photo = jmcomic.download_photo(photo_id)
-                    logger.info(f"下载完成，检查文件...")
+                    logger.debug(f"下载完成，检查文件...")
     
                 except Exception as e1:
-                    logger.warning(f"方法1失败: {e1}")
+                    logger.debug(f"方法1失败: {e1}")
                     # 方法2: 尝试下载整个专辑
                     try:
-                        logger.info(f"尝试下载整个专辑: {album_id}")
+                        logger.debug(f"尝试下载整个专辑: {album_id}")
                         jmcomic.download_album(album_id)
                     except Exception as e2:
-                        logger.warning(f"方法2也失败: {e2}")
+                        logger.debug(f"方法2也失败: {e2}")
                         # 如果都失败，抛出异常
                         raise
             finally:
                 # 恢复原始工作目录
                 os.chdir(original_dir)
-                logger.info(f"恢复工作目录到: {original_dir}")
+                logger.debug(f"恢复工作目录到: {original_dir}")
             
             # 检查下载是否成功 - 搜索所有可能的下载位置
             logger.info(f"搜索下载的文件...")
@@ -937,9 +944,6 @@ class JMComicCommand(BaseCommand):
                 pdf_path = chapter_dir / f"{pdf_name}.pdf"
                 pdf_paths_to_delete.append(pdf_path)
                 
-                if num_pdfs > 1:
-                    await self.send_text(f"正在生成第 {pdf_index + 1}/{num_pdfs} 个 PDF ({len(batch_images)} 张图片)...")
-                
                 if create_pdf_from_images(batch_images, pdf_path, f"JM{album_id}"):
                     # 发送 PDF 文件
                     try:
@@ -984,9 +988,6 @@ class JMComicCommand(BaseCommand):
                         logger.info(f"已删除临时 PDF 文件: {pdf_path}")
                 except Exception as e:
                     logger.warning(f"删除临时 PDF 文件失败: {e}")
-            
-            if send_success and num_pdfs > 1:
-                await self.send_text(f"全部 {num_pdfs} 个 PDF 发送完成！")
             
             return
 
