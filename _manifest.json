@@ -1,7 +1,7 @@
 
 {
   "manifest_version": 1,
-  "name": "geffnt_jmcomic-plugin",
+  "name": "禁漫天堂插件",
   "version": "1.0.0",
   "description": "基于 JMComic-Crawler-Python 的禁漫天堂漫画下载插件，支持漫画搜索、章节下载、PDF导出、图片压缩等功能",
   "author": {
