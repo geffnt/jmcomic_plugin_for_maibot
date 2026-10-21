@@ -1,86 +1,51 @@
-
 {
-  "manifest_version": 1,
-  "name": "禁漫天堂插件",
-  "version": "1.0.0",
-  "description": "基于 JMComic-Crawler-Python 的禁漫天堂漫画下载插件，支持漫画搜索、章节下载、PDF导出、图片压缩等功能",
+  "manifest_version": 2,
+  "id": "geffnt.jmcomic-plugin",
+  "version": "2.0.0",
+  "name": "JMComic 漫画插件",
+  "description": "基于 JMComic-Crawler-Python 的禁漫天堂漫画插件，支持漫画搜索、详情查询、章节下载，以及 PDF / 图片两种方式发送。",
   "author": {
     "name": "geffnt",
     "url": "https://github.com/geffnt"
   },
   "license": "MIT",
+  "urls": {
+    "repository": "https://github.com/geffnt/jmcomic_plugin_for_maibot",
+    "homepage": "https://github.com/geffnt/jmcomic_plugin_for_maibot"
+  },
   "host_application": {
-    "name": "MaiBot",
-    "min_version": "0.11.0"
+    "min_version": "1.0.0",
+    "max_version": "1.99.99"
   },
-  "homepage_url": "https://github.com/geffnt/jmcomic_plugin_for_maibot",
-  "repository_url": "https://github.com/geffnt/jmcomic_plugin_for_maibot",
-  "keywords": [
-    "jmcomic",
-    "comic",
-    "漫画",
-    "禁漫"
-  ],
-  "categories": [
-    "Utility Tools"
-  ],
-  "default_locale": "zh-CN",
-  "plugin_info": {
-    "is_built_in": false,
-    "plugin_type": "extension",
-    "components": [
-      {
-        "type": "command",
-        "name": "JMComicCommand",
-        "description": "从 JMComic 搜索和下载漫画",
-        "pattern": "^(/jm|jm漫画|禁漫)\\s*(?P<args>.*)?$",
-        "usage": "/jm <子命令> [参数]",
-        "examples": [
-          "/jm 123456",
-          "/jm 123456 2",
-          "/jm 123456 pdf",
-          "/jm 123456 2 jpg"
-        ]
-      }
-    ],
-    "features": [
-      "搜索 JMComic 漫画",
-      "获取漫画详情和章节列表",
-      "下载指定章节",
-      "合并转发格式发送图片",
-      "PDF 导出功能（支持命令行参数控制）",
-      "PDF 图片压缩（降低文件大小）",
-      "PDF 分卷功能（可配置每PDF图片数）",
-      "支持代理设置",
-      "支持账号登录",
-      "用户冷却时间控制",
-      "单张发送图片模式",
-      "可配置单次发送页数上限"
-    ],
-    "dependencies": {
-      "python": [
-        "jmcomic",
-        "reportlab",
-        "Pillow"
-      ],
-      "plugins": [],
-      "external_api": [
-        "JMComic (禁漫天堂)"
-      ]
+  "sdk": {
+    "min_version": "2.5.1",
+    "max_version": "2.99.99"
+  },
+  "dependencies": [
+    {
+      "type": "python_package",
+      "name": "jmcomic",
+      "version_spec": ">=2.7.0"
     },
-    "config": {
-      "has_config": true,
-      "config_file": "config.toml"
+    {
+      "type": "python_package",
+      "name": "reportlab",
+      "version_spec": ">=4.0.0"
+    },
+    {
+      "type": "python_package",
+      "name": "Pillow",
+      "version_spec": ">=10.0.0"
     }
-  },
-  "permissions": [
-    "send.image",
-    "send.text",
-    "send.forward",
-    "network.http",
-    "filesystem.read",
-    "filesystem.write"
   ],
-  "id": "geffnt.jmcomic-plugin"
+  "plugin_type": "integration",
+  "capabilities": [
+    "send.text",
+    "send.image",
+    "send.custom",
+    "send.hybrid"
+  ],
+  "i18n": {
+    "default_locale": "zh-CN"
+  }
 }
-

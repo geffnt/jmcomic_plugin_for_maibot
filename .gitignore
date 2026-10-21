@@ -1,0 +1,12 @@
+# 运行时配置由 Runner 根据 config_model 生成，不纳入版本库
+/config.toml
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 插件运行时下载临时目录
+/jmcomic_downloads/
+
+# 本地环境
+.venv/
