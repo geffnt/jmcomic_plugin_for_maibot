@@ -98,7 +98,7 @@
 | 200 | 5 个 PDF：40 × 5 |
 
 `images_per_pdf = 0` 表示超过阈值也不拆分。
-`tests/test_batching.py` 用 `ast` 抽出该纯函数（无需安装 SDK）覆盖了这些边界。
+单元测试用 `ast` 抽出该纯函数（无需安装 SDK）覆盖了这些边界。
 
 ### 消息流程
 
@@ -119,7 +119,7 @@
 - **提示只在真的分卷时才报份数**，判据是 `pdf_count > 1`（而不是直接比 60），
   这样改了 `single_pdf_max_pages` / `images_per_pdf` 后行为依然自洽。
   该逻辑在纯函数 `_format_page_notice(total, pdf_count)` 里，已由
-  `tests/test_batching.py` 覆盖（59/60 报页数，61 起报份数）。
+  单元测试覆盖（59/60 报页数，61 起报份数）。
 
 ### 命令串行化（待处理队列）
 
@@ -146,7 +146,7 @@ worker 每次都 `await` 完整个任务才取下一个，串行因此是结构�
 若保持那样，队列里下一个命令要白等 5 分钟。所以清理已挪到独立后台任务
 （`_schedule_pdf_cleanup` → `_cleanup_pdfs_later`），
 `_run_download_job` 返回即代表本次 PDF 已全部发完。
-`tests/test_queue_serial.py` 把保留期故意设成 10 秒来验证这一点。
+集成测试把保留期故意设成 10 秒来验证这一点。
 
 ### 禁漫接口的 UTF-8 BOM（服务端变更兼容）
 
@@ -185,7 +185,7 @@ content[:24] = b'\xef\xbb\xbf{"code":200,"data":"7'
    property，所以要回退去写 `_content`。两者都处理了。
 2. `text` 是**带缓存的** property（`curl_cffi` 缓存到 `self._text`）。
    只改 `content` 不失效 `_text`，校验读到的仍是带 BOM 的旧值，
-   **补丁等于没打**——这是第一版失败的原因，`tests/test_batching.py` 有专门的用例守着。
+   **补丁等于没打**——这是第一版失败的原因，单元测试有专门的用例守着。
 
 ### 能力声明
 
@@ -198,7 +198,7 @@ MaiBot 的能力授权是**精确字符串匹配**（`AuthorizationManager.check
 ```
 
 少声明任何一个，运行时都会被 `E_CAPABILITY_DENIED` 拒绝。
-`tests/test_manifest.py::test_capabilities_cover_used_send_methods`
+单元测试 `test_capabilities_cover_used_send_methods`
 会自动比对源码用到的 `ctx.send.*` 与清单声明，防止漏声明。
 
 ### PDF 为什么传本地路径而不是 base64
@@ -302,29 +302,14 @@ python -c "import json; json.load(open('_manifest.json', encoding='utf-8')); pri
 python -m py_compile plugin.py
 ```
 
-`tests/` 目录下的用例分两类：
-
-| 文件 | 依赖 | 内容 |
-|------|------|------|
-| `tests/test_manifest.py` | 仅标准库 | 清单字段、能力声明与源码 `ctx.send.*` 的一致性 |
-| `tests/test_batching.py` | 仅标准库 | 分卷规则、提示文本、BOM 剥离与失败提示截断（用 `ast` 抽出纯函数，无需 SDK） |
-| `tests/test_queue_serial.py` | 需 `maibot_sdk` | 串行化与「清理不阻塞队列」的真实运行验证 |
-| `tests/test_jmcomic_live.py` | 需 `maibot_sdk` + 网络 | 联网验证 BOM 兼容是否仍然有效（回归测试） |
-
-前两个是纯 pytest 用例，也可以直接用标准库跑（脚本方式遍历 `test_*` 函数即可）。
-后两个需要 `maibot_sdk`，用 MaiBot 自带的解释器直接运行：
+`tests/` 目录不随插件发布，仅在开发副本中保留（4 个文件：`test_manifest.py`、
+`test_batching.py`、`test_queue_serial.py`、`test_jmcomic_live.py`）。
+前两个只依赖标准库，后两个需要 `maibot_sdk`，用 MaiBot 自带的解释器运行：
 
 ```bash
 <MaiBot>/python-env/python.exe tests/test_queue_serial.py
 <MaiBot>/python-env/python.exe tests/test_jmcomic_live.py
 ```
-
-`test_queue_serial.py` 会用假的客户端和发送通道跑真实的队列，并把
-`_PDF_KEEP_SECONDS` 故意设成 10 秒——若延迟清理又变回阻塞队列，
-第二个任务的开始时间会立刻暴露在输出的时间线上。
-
-`test_jmcomic_live.py` 只做「建客户端 + 解析作品」，不下载图片，几秒结束。
-网络不通时它会跳过；但如果再次出现 `请求不是json格式`，说明 BOM 兼容失效，判失败。
 
 ### 本地加载
 
