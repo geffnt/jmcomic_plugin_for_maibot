@@ -1,4 +1,4 @@
-"""JMComic 漫画插件（MaiBot 新插件系统版）。
+"""禁麦天堂（MaiBot 新插件系统版）。
 
 把 JMComic-Crawler-Python (https://github.com/hect0x7/JMComic-Crawler-Python)
 接入 MaiBot：支持漫画搜索、详情查询、章节下载，以及 PDF / 图片两种方式发送。
@@ -60,7 +60,7 @@ PDF_JPEG_QUALITY = 75  # 起始 JPEG 质量（不超预算时就用它，画质�
 PDF_MIN_JPEG_QUALITY = 40  # 质量下限
 PDF_MIN_RESOLUTION = 900  # 长边最小像素
 
-_COMMAND_HELP = """JMComic 漫画插件使用说明：
+_COMMAND_HELP = """禁麦天堂使用说明：
 /jm <漫画ID> [章节号] [pdf/jpg] - 下载并发送漫画
   例如：/jm 123456          （第 1 章，PDF）
         /jm 123456 2        （第 2 章，PDF）
@@ -653,8 +653,16 @@ class PluginSection(PluginConfigBase):
     __ui_icon__ = "settings"
     __ui_order__ = 0
 
-    enabled: bool = Field(default=False, description="是否启用插件")
-    config_version: str = Field(default="1.0.0", description="配置版本号")
+    enabled: bool = Field(
+        default=False,
+        description="是否启用插件",
+        json_schema_extra={"label": "启用插件"},
+    )
+    config_version: str = Field(
+        default="1.0.0",
+        description="配置版本号",
+        json_schema_extra={"label": "配置版本"},
+    )
 
 
 class ComponentSection(PluginConfigBase):
@@ -664,7 +672,11 @@ class ComponentSection(PluginConfigBase):
     __ui_icon__ = "extension"
     __ui_order__ = 1
 
-    enable_command: bool = Field(default=True, description="是否启用 /jm 下载命令")
+    enable_command: bool = Field(
+        default=True,
+        description="是否启用 /jm 下载命令",
+        json_schema_extra={"label": "启用下载命令"},
+    )
 
 
 class ApiSection(PluginConfigBase):
@@ -674,10 +686,15 @@ class ApiSection(PluginConfigBase):
     __ui_icon__ = "language"
     __ui_order__ = 2
 
-    domain: str = Field(default="", description="JMComic 自定义 API 域名（留空使用默认）")
+    domain: str = Field(
+        default="",
+        description="JMComic 自定义 API 域名（留空使用默认）",
+        json_schema_extra={"label": "API 域名"},
+    )
     proxy: str = Field(
         default="",
         description="代理地址，如 http://127.0.0.1:7890（留空使用系统代理）",
+        json_schema_extra={"label": "代理地址"},
     )
 
 
@@ -688,7 +705,11 @@ class DownloadSection(PluginConfigBase):
     __ui_icon__ = "download"
     __ui_order__ = 3
 
-    base_dir: str = Field(default="", description="漫画下载目录（留空使用插件运行时临时目录）")
+    base_dir: str = Field(
+        default="",
+        description="漫画下载目录（留空使用插件运行时临时目录）",
+        json_schema_extra={"label": "下载目录"},
+    )
 
 
 class AuthSection(PluginConfigBase):
@@ -698,8 +719,16 @@ class AuthSection(PluginConfigBase):
     __ui_icon__ = "lock"
     __ui_order__ = 4
 
-    username: str = Field(default="", description="JMComic 用户名（可选，用于访问受限内容）")
-    password: str = Field(default="", description="JMComic 密码")
+    username: str = Field(
+        default="",
+        description="JMComic 用户名（可选，用于访问受限内容）",
+        json_schema_extra={"label": "用户名"},
+    )
+    password: str = Field(
+        default="",
+        description="JMComic 密码",
+        json_schema_extra={"label": "密码"},
+    )
 
 
 class FeaturesSection(PluginConfigBase):
@@ -709,39 +738,60 @@ class FeaturesSection(PluginConfigBase):
     __ui_icon__ = "tune"
     __ui_order__ = 5
 
-    cooldown_seconds: int = Field(default=30, description="命令冷却时间（秒），0 表示不限制")
-    max_pending_jobs: int = Field(
-        default=3,
-        description="待处理队列上限：正在发送时最多还能排几个命令",
+    cooldown_seconds: int = Field(
+        default=0,
+        description="命令冷却时间（秒），0 表示不限制",
+        json_schema_extra={"label": "命令冷却（秒）"},
     )
-    max_pages_per_send: int = Field(default=1000, description="单次最多发送页数")
-    use_forward_message: bool = Field(default=True, description="以合并转发（图文混合）方式发送")
-    send_as_pdf: bool = Field(default=True, description="将图片合并为 PDF 发送")
+    max_pending_jobs: int = Field(
+        default=0,
+        description="待处理队列上限：正在发送时最多还能排几个命令，0 表示不限制",
+        json_schema_extra={"label": "待处理队列上限"},
+    )
+    max_pages_per_send: int = Field(
+        default=1000,
+        description="单次最多发送页数",
+        json_schema_extra={"label": "单次最多发送页数"},
+    )
+    use_forward_message: bool = Field(
+        default=True,
+        description="以合并转发（图文混合）方式发送",
+        json_schema_extra={"label": "合并转发发送"},
+    )
+    send_as_pdf: bool = Field(
+        default=True,
+        description="将图片合并为 PDF 发送",
+        json_schema_extra={"label": "合并为 PDF 发送"},
+    )
     pdf_fallback_to_images: bool = Field(
         default=False,
         description="PDF 发送失败时是否回退为逐张发送图片（默认关闭，失败会直接提示）",
+        json_schema_extra={"label": "PDF 失败回退图片"},
     )
     single_pdf_max_pages: int = Field(
         default=60,
         description="页数不超过该值时合并为单个 PDF，超过则按 images_per_pdf 拆成多个",
+        json_schema_extra={"label": "单 PDF 页数阈值"},
     )
     images_per_pdf: int = Field(
-        default=40, description="拆分时每个 PDF 包含的图片数量（0 表示不拆分，最大 60）"
-    )
-    pdf_target_mb_per_60_pages: float = Field(
-        default=PDF_TARGET_MB,
-        description="60 页 PDF 的目标体积（MB），按页均摊作为单页压缩预算；0 表示不限制",
+        default=40,
+        description="拆分时每个 PDF 包含的图片数量（0 表示不拆分，最大 60）",
+        json_schema_extra={"label": "拆分时每卷页数"},
     )
     pdf_max_resolution: int = Field(
-        default=PDF_MAX_RESOLUTION, description="PDF 内图片长边最大像素"
+        default=PDF_MAX_RESOLUTION,
+        description="PDF 内图片长边最大像素",
+        json_schema_extra={"label": "PDF 图片长边像素"},
     )
     pdf_jpeg_quality: int = Field(
-        default=PDF_JPEG_QUALITY, description="PDF 内图片的起始 JPEG 质量（不超预算时使用）"
+        default=PDF_JPEG_QUALITY,
+        description="PDF 内图片的起始 JPEG 质量（不超预算时使用）",
+        json_schema_extra={"label": "PDF 起始 JPEG 质量"},
     )
 
 
 class JmcomicConfig(PluginConfigBase):
-    """JMComic 漫画插件配置。"""
+    """禁麦天堂配置。"""
 
     plugin: PluginSection = Field(default_factory=PluginSection)
     components: ComponentSection = Field(default_factory=ComponentSection)
@@ -755,7 +805,7 @@ class JmcomicConfig(PluginConfigBase):
 # 插件类
 # --------------------------------------------------------------------------- #
 class JmcomicPlugin(MaiBotPlugin):
-    """JMComic 漫画插件。"""
+    """禁麦天堂。"""
 
     config_model = JmcomicConfig
 
@@ -789,7 +839,7 @@ class JmcomicPlugin(MaiBotPlugin):
                 )
         except Exception as exc:  # noqa: BLE001
             self.ctx.logger.warning("安装禁漫 BOM 兼容补丁失败：%s", exc)
-        self.ctx.logger.info("JMComic 漫画插件已加载")
+        self.ctx.logger.info("禁麦天堂已加载")
 
     async def on_unload(self) -> None:
         """插件卸载时执行。"""
@@ -813,7 +863,7 @@ class JmcomicPlugin(MaiBotPlugin):
         self._pending_pdfs.clear()
         self._cooldown_cache.clear()
         self._client = None
-        self.ctx.logger.info("JMComic 漫画插件已卸载")
+        self.ctx.logger.info("禁麦天堂已卸载")
 
     async def on_config_update(
         self, scope: str, config_data: dict[str, Any], version: str
@@ -824,7 +874,7 @@ class JmcomicPlugin(MaiBotPlugin):
             # 配置变化后重建客户端，使域名 / 代理 / 下载目录等生效
             self._cooldown_cache.clear()
             self._client = None
-            self.ctx.logger.info("JMComic 漫画插件配置已更新（version=%s）", version)
+            self.ctx.logger.info("禁麦天堂配置已更新（version=%s）", version)
 
     # ---------------------------- 内部工具 ---------------------------- #
     def _get_client(self) -> JmcomicClient:
@@ -970,9 +1020,10 @@ class JmcomicPlugin(MaiBotPlugin):
         # 等前一个 PDF 完全发完再由 worker 依次执行。
         pending = self._pending_count()
         if pending > 0:
-            # 上限只约束「排队中」的数量，不把正在发送的那个算进去
-            limit = max(1, int(self.config.features.max_pending_jobs))
-            if self._job_queue.qsize() >= limit:
+            # 上限只约束「排队中」的数量，不把正在发送的那个算进去；
+            # limit <= 0 表示不限制排队数量
+            limit = int(self.config.features.max_pending_jobs)
+            if limit > 0 and self._job_queue.qsize() >= limit:
                 await self.ctx.send.text(
                     f"待处理队列已满（{limit} 个），请等当前任务发完后再试~", stream_id
                 )
@@ -1191,10 +1242,12 @@ class JmcomicPlugin(MaiBotPlugin):
         features = self.config.features
         max_resolution = max(200, int(features.pdf_max_resolution))
         jpeg_quality = max(1, min(95, int(features.pdf_jpeg_quality)))
-        target_mb = float(features.pdf_target_mb_per_60_pages)
-        # 按页均摊目标体积，得到单页 JPEG 预算（0 表示不限制）
+        # 体积预算固定为「60 页 10 MB」，不再作为配置项暴露；
+        # 按页均摊得到单页 JPEG 预算（PDF_TARGET_MB 为 0 时才表示不限制）
         page_budget = (
-            int(target_mb * 1024 * 1024 / PDF_PAGES_PER_TARGET) if target_mb > 0 else 0
+            int(PDF_TARGET_MB * 1024 * 1024 / PDF_PAGES_PER_TARGET)
+            if PDF_TARGET_MB > 0
+            else 0
         )
         self.ctx.logger.info(
             "PDF 压缩参数：长边 %dpx，起始质量 %d，单页预算 %.0f KB",

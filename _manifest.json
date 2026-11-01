@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "id": "geffnt.jmcomic-plugin",
   "version": "2.0.0",
-  "name": "JMComic 漫画插件",
+  "name": "禁麦天堂",
   "description": "基于 JMComic-Crawler-Python 的禁漫天堂漫画插件，支持漫画搜索、详情查询、章节下载，以及 PDF / 图片两种方式发送。",
   "author": {
     "name": "geffnt",

@@ -1,4 +1,4 @@
-# JMComic 漫画插件 for MaiBot
+# 禁麦天堂 for MaiBot
 
 基于 [JMComic-Crawler-Python](https://github.com/hect0x7/JMComic-Crawler-Python) 的禁漫天堂漫画插件，支持漫画搜索、详情查询、章节下载，以及 PDF / 图片两种方式发送。
 
@@ -71,17 +71,19 @@
 | `download` | `base_dir` | `""` | 下载目录（留空用插件运行时临时目录） |
 | `auth` | `username` | `""` | JMComic 用户名（可选） |
 | `auth` | `password` | `""` | JMComic 密码 |
-| `features` | `cooldown_seconds` | `30` | 命令冷却时间（秒），0 表示不限制 |
-| `features` | `max_pending_jobs` | `3` | 正在发送时最多排队多少个命令，超出会提示队列已满 |
+| `features` | `cooldown_seconds` | `0` | 命令冷却时间（秒），0 表示不限制 |
+| `features` | `max_pending_jobs` | `0` | 正在发送时最多排队多少个命令，0 表示不限制 |
 | `features` | `max_pages_per_send` | `1000` | 单次最多发送页数 |
 | `features` | `use_forward_message` | `true` | 以合并转发（图文混合）方式发送 |
 | `features` | `send_as_pdf` | `true` | 将图片合并为 PDF 发送 |
 | `features` | `pdf_fallback_to_images` | `false` | PDF 发送失败时是否回退为逐张发图（默认关闭） |
 | `features` | `single_pdf_max_pages` | `60` | 页数不超过该值时合成单个 PDF |
 | `features` | `images_per_pdf` | `40` | 超过阈值时每份 PDF 的页数（0 表示不拆分，最大 60） |
-| `features` | `pdf_target_mb_per_60_pages` | `10` | 60 页 PDF 的目标体积（MB），按页均摊为压缩预算；0 表示不限制 |
 | `features` | `pdf_max_resolution` | `1500` | PDF 内图片长边最大像素 |
 | `features` | `pdf_jpeg_quality` | `75` | PDF 内图片的起始 JPEG 质量（不超预算时就用它） |
+
+> PDF 的体积预算固定为「60 页约 10 MB」，由代码常量 `PDF_TARGET_MB` / `PDF_PAGES_PER_TARGET`
+> 控制（单页约 170 KB），不再作为配置项暴露。
 
 ## 实现要点（改动后需注意）
 
@@ -134,9 +136,10 @@ worker 每次都 `await` 完整个任务才取下一个，串行因此是结构�
 
 | 情况 | 行为 |
 |------|------|
-| 空闲 | 走原有冷却检查，通过则立即执行 |
+| 空闲 | 走原有冷却检查（`cooldown_seconds` 默认 0，即不限制），通过则立即执行 |
 | 正在发送 / 已有排队 | **跳过冷却检查直接排队**，回 `已加入待处理队列（前面还有 N 个），等当前任务发完自动开始~` |
-| 排队数达到 `max_pending_jobs` | 回 `待处理队列已满（N 个），请等当前任务发完后再试~` |
+| `max_pending_jobs > 0` 且排队数达到该值 | 回 `待处理队列已满（N 个），请等当前任务发完后再试~` |
+| `max_pending_jobs = 0`（默认） | 不限制排队数量 |
 
 冷却检查刻意放在排队分支**之后**：否则冷却会把本该排队的命令直接挡掉，
 就回到了「发送期间命令被丢弃」的老问题。
@@ -244,7 +247,7 @@ NapCat 的 `checkUriType` 再用 `fs.existsSync` 判定为 Local 并**直接使�
 ### PDF 体积控制
 
 目标：**60 页的 PDF 约 10 MB**，即单页 JPEG 预算
-`10 MB / 60 ≈ 171 KB`（`pdf_target_mb_per_60_pages` 可调，按页均摊）。
+`10 MB / 60 ≈ 171 KB`（由代码常量 `PDF_TARGET_MB` / `PDF_PAGES_PER_TARGET` 固定，按页均摊，不再作为配置项）。
 
 压缩顺序**优先保画质**：
 
@@ -313,7 +316,7 @@ python -m py_compile plugin.py
 
 ### 本地加载
 
-把插件放入 `plugins/`，启动 MaiBot，观察日志中出现 `JMComic 漫画插件已加载`，且插件管理页能看到该插件。
+把插件放入 `plugins/`，启动 MaiBot，观察日志中出现 `禁麦天堂已加载`，且插件管理页能看到该插件。
 
 ### 功能测试
 
@@ -353,22 +356,23 @@ python -m py_compile plugin.py
   避免平台读取本地文件时已被清理。该清理**已异步化**，不再阻塞后续命令。
 - **PDF 分卷规则**：页数 ≤ `single_pdf_max_pages`（默认 60）时合成单个 PDF；
   超过则按 `images_per_pdf`（默认 40）拆成多个分别发送。
-- **PDF 体积控制**：按 `pdf_target_mb_per_60_pages`（默认 10 MB / 60 页）均摊出单页预算，
+- **PDF 体积控制**：按代码常量 `PDF_TARGET_MB`（默认 10 MB / 60 页）均摊出单页预算，
   优先保质量、其次降分辨率、最后才降质量；并关掉 reportlab 的 ASCII85 编码省下约 25%。
 - **PDF 改用本地路径发送**：不再走 `base64://`（会撞 16 MB 帧上限）。
 - **提示文本**：受理后发 `正在下载《作品名》第X章`，生成 PDF 前发
   `共 x 张图片，将分为 y 个 PDF 发送`（单卷时只说 `共 x 页`）。
   两段文本分别在纯函数 `_format_download_notice` / `_format_page_notice` 里。
 - **命令串行化**：新增待处理队列，前一个命令的 PDF 完全发完之前，
-  后续命令只排队不并发（`max_pending_jobs` 默认 3）；
+  后续命令只排队不并发（`max_pending_jobs` 默认 0，即不限制排队数量）；
   同时把 300 秒的 PDF 延迟清理移出任务关键路径，避免队列被拖住。
 - **禁漫 UTF-8 BOM 兼容**：服务端在响应体前加了 BOM 导致 jmcomic 全部判成
   「不是 json」并重试到失败（2.7.7 为最新版，上游未修）。插件侧打补丁剥离前导 BOM。
 - **失败提示不再刷屏**：jmcomic 会把 24 次重试详情塞进异常文本，原先整段发到聊天里；
   现只发首行并截断（180 字），完整堆栈仍进日志。
-- **命令串行化**：新增待处理队列，前一个命令的 PDF 完全发完之前，
-  后续命令只排队不并发（`max_pending_jobs` 默认 3）；
-  同时把 300 秒的 PDF 延迟清理移出任务关键路径，避免队列被拖住。
+- **配置项默认值调整**：`cooldown_seconds` 默认 0、`max_pending_jobs` 默认 0（均表示不限制），
+  并移除 `pdf_target_mb_per_60_pages`（体积预算改为代码常量，不再暴露到配置页）。
+- **配置页中文标题**：为全部 18 个配置字段补上 `json_schema_extra={"label": ...}`，
+  修掉 WebUI 显示裸字段名（如 `send_as_pdf`）的问题。
 
 ## 依赖项目
 
